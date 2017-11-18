@@ -1,0 +1,85 @@
+                       SPIM DEBUGGER QUICK GUIDE
+
+SPIM is a MIPS32 simulator. If you run your code inside SPIM you can
+use SPIM as a debugger. Unfortunatly, you cannot pass anything in command line
+arguments. Thus, you will need to hard-code any command line args before using
+SPIM as a debugger. 
+
+STEP 1.
+You first need to create labels that you may want to use as breakpoints. At
+the very top of your text section use the assembler directive .globl for
+any label you wish to use as a breakpoint:
+
+    .text
+    .globl main
+    .globl b1
+    .globl b2
+    .globl fill_loop
+
+STEP 2.
+Next put the breakpoints in your code as places you wish to take a close look
+at. For example:
+
+fill_loop:        
+   move $t2, $t1  
+   mult $t2, $t2   
+   mflo $t2       
+   sw $t2, ($t0)      
+   # set a breakpoint here so you can check the value in $t2 
+   b1:
+
+STEP 3. 
+Execute Spim and run your code. Sample Session:
+
+$ spim
+(spim) re "test.s"
+(spim) breakp b1 
+(spim) run
+Breakpoint encountered at 0x00400024
+(spim) p $t2       # print value in register $t2
+Reg 10 = 0x000000A2 
+(spim) s           # step 1 instruction
+(spim) s 5         # step the program for 5 instructions
+(spim) print_sym   # print all global symbols
+(spim) help        # display all instructions
+(spim) cont        # continue executing until next break point
+(spim) list        # list all breakpoints
+(spim) exit
+
+
+From help:
+exit  -- Exit the simulator
+quit  -- Exit the simulator
+read "FILE" -- Read FILE containing assembly code into memory
+load "FILE" -- Same as read
+run <ADDR> -- Start the program at (optional) ADDRESS
+step <N> -- Step the program for N instructions (default 1)
+continue -- Continue program execution without stepping
+print $N -- Print register N
+print $fN -- Print floating point register N
+print ADDR -- Print contents of memory at ADDRESS
+print_symbols -- Print all global symbols
+print_all_regs -- Print all MIPS registers
+print_all_regs hex -- Print all MIPS registers in hex
+reinitialize -- Clear the memory and registers
+breakpoint <ADDR> -- Set a breakpoint at address ADDR
+delete <ADDR> -- Delete breakpoint at address ADDR
+list -- List all breakpoints
+dump [ "FILE" ] -- Dump binary code to spim.dump or FILE in network byte order
+dumpnative ["FILE"]-- Dump binary code to spim.dump or FILE in host byte order
+
+Notes on SPIM:
+The error "Attempt to execute non-instruction at 0x(address)00" where
+address is the next address after your program ends means you did not
+execute the syscall to exit
+
+The first executable instruction must be preceded with label "__start:" or
+by the directive if you want it to be something other than main: 
+
+   .globl __start 
+   main:
+
+When you step through a program in SPIM the first instructions are setup
+instructions that are not part of your program.
+
+
