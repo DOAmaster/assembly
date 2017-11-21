@@ -25,14 +25,20 @@
 # file_close  $v0 = 16   
 #             $a0 = file descriptor
 #
+#           .space  1 '\0'      # stuff a null character at the end of the buffer
 
 .data
-filename: .asciiz "data"     # filename
+filename: .asciiz "csub3.ppm"     # filename
           .word   0          # do this to align things
 buffer:   .space  4          # a buffer of size 4 bytes 
-          .space  1 '\0'      # stuff a null character at the end of the buffer
+
           .word   0          # do this to align things
 errormsg: .asciiz "file open or read error\n"
+foundmsg: .asciiz "Good P3 file found.\n"
+foundcomment: .asciiz "Found a comment: "
+hightmsg: .asciiz "Image height: "
+widthmsg: .asciiz "Image width: "
+colormsg: .asciiz "Maximum color value: "
 linefeed: .asciiz "\n"
 
 .text
@@ -82,7 +88,10 @@ b1:                      # put in break point for debugging purposes
 top:
 	li   $v0, 4          # 4=print string
 	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
-	syscall     
+	syscall    
+	
+	li $t3, 'P'
+	beq $v0, $t3, goodppm
 	#li   $v0, 11         # print a star
 	#li   $a0, '*'
 	#syscall
@@ -105,6 +114,13 @@ top:
 	add  $a0, $s0, $0  # $s0 holds fd
 	syscall            # close file
 	b exit 
+
+goodppm:
+	li $v0, 4
+	la $a0, foundmsg
+	syscall
+	bltz $v0, error      # amount of data read is in v0
+	bgtz $v0, top
 
 error:                 # file i/o error 
 	li $v0, 4
