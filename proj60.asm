@@ -40,6 +40,7 @@ hightmsg: .asciiz "Image height: "
 widthmsg: .asciiz "Image width: "
 colormsg: .asciiz "Maximum color value: "
 linefeed: .asciiz "\n"
+var1:     .asciiz "P3"
 
 .text
 .globl main
@@ -83,15 +84,17 @@ b1:                      # put in break point for debugging purposes
 	# li   $v0, 1      
 	# syscall
 	                     # print the buffer
-	                     # print string syscall will stop at \0 
+	                     # print string syscall will stop at \0
+ 	la $t3, var1
+  jal goodppm
+#	beq $v0, $t3, goodppm  
 	# ------------------------------------------------------------------
 top:
-	li   $v0, 4          # 4=print string
+  li $v0, 4            # 4=print string
+# prints line by line
 	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
 	syscall    
 	
-	li $t3, 'P'
-	beq $v0, $t3, goodppm
 	#li   $v0, 11         # print a star
 	#li   $a0, '*'
 	#syscall
