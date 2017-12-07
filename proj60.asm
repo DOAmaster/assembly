@@ -36,7 +36,7 @@ buffer:   .space  4          # a buffer of size 4 bytes
 errormsg: .asciiz "file open or read error\n"
 foundmsg: .asciiz "Good P3 file found.\n"
 foundcomment: .asciiz "Found a comment: "
-hightmsg: .asciiz "Image height: "
+heightmsg: .asciiz "Image height: "
 widthmsg: .asciiz "Image width: "
 colormsg: .asciiz "Maximum color value: "
 linefeed: .asciiz "\n"
@@ -86,28 +86,50 @@ b1:                      # put in break point for debugging purposes
 	                     # print the buffer
 	                     # print string syscall will stop at \0
  	la $t3, var1
+
+
+
   jal goodppm
 #	beq $v0, $t3, goodppm  
+  jal comment
+
+  jal height
+
+  jal width
+
 	# ------------------------------------------------------------------
 top:
   li $v0, 4            # 4=print string
-# prints line by line
+
+
+
+# prints char by line
 	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
 	syscall    
+ 
 	
-	#li   $v0, 11         # print a star
+	#li   $v0, 11         # print a star in second char
 	#li   $a0, '*'
 	#syscall
+
 	                     # read 4 more bytes
 	li   $v0, 14         # 14=read from file
 	add  $a0, $s0, $0    # $s0 holds fd
-	syscall
+
+
+  li  $t0, '#'
+  beq $v0, $t0, comment
+
+  syscall
+
 	bltz $v0, error      # amount of data read is in v0
 	bgtz $v0, top
 	#-------------------------------------------------------------------
 	                     # EOF was reached.
 	                     # print a final line feed
 	                     # useful for debugging so you know where you end
+eof:
+
 	li   $a0, 10
 	li   $v0, 11
 	syscall
@@ -116,12 +138,57 @@ top:
 	li  $v0, 16        # 16=close file
 	add  $a0, $s0, $0  # $s0 holds fd
 	syscall            # close file
-	b exit 
+	b exit
+
+height:
+	li $v0, 4
+	la $a0, heightmsg
+	syscall
+
+
+  
+  j $ra
+
+width: 
+	li $v0, 4
+	la $a0, widthmsg
+	syscall
+
+
+
+  j $ra
+
+
+comment:
+	li $v0, 4
+	la $a0, foundcomment
+	syscall
+
+comment2:
+
+  li $v0, 4            # 4=print string
+                       # prints char by line
+	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
+	syscall    
+	                     # read 4 more bytes
+#	li   $v0, 14         # 14=read from file
+#	add  $a0, $s0, $0    # $s0 holds fd
+ # syscall
+
+  li  $t0, 'A'
+  beq $v0, $t0, comment2
+
+  j $ra
+
+ # bltz $v0, error
+ # bgtz $v0, top       #branch if $v0 is not 0 back to top
 
 goodppm:
 	li $v0, 4
 	la $a0, foundmsg
 	syscall
+
+  j $ra
 	bltz $v0, error      # amount of data read is in v0
 	bgtz $v0, top
 
