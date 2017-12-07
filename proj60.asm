@@ -41,6 +41,7 @@ widthmsg: .asciiz "Image width: "
 colormsg: .asciiz "Maximum color value: "
 linefeed: .asciiz "\n"
 var1:     .asciiz "P3"
+var2:	  .asciiz "#"
 
 .text
 .globl main
@@ -75,7 +76,7 @@ lab1:
 	syscall
 	                     # check error condition
 	bltz $v0, error      # amount of data read is in v0 
-b1:                      # put in break point for debugging purposes
+b1:                          # put in break point for debugging purposes
 	                     # do this to display number of bytes read -
 	                     # when $v0 = 0 you have hit EOF
 	                     # this code is useful for debugging -
@@ -90,6 +91,8 @@ b1:                      # put in break point for debugging purposes
 
 
   jal goodppm
+ 	la $t3, var1	     # loads 'P3' in $t3
+  #jal goodppm
 #	beq $v0, $t3, goodppm  
   jal comment
 
@@ -97,7 +100,6 @@ b1:                      # put in break point for debugging purposes
 
   jal width
 
-	# ------------------------------------------------------------------
 top:
   li $v0, 4            # 4=print string
 
@@ -109,6 +111,18 @@ top:
  
 	
 	#li   $v0, 11         # print a star in second char
+  	li $v0, 4            # 4=print string
+			     # 
+	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
+
+	li $t4, '#'
+	move $t5, $a0
+	beq $a0, $t4, printcomment	
+
+	syscall   	     # prints the data to screen 
+
+	
+	#li   $v0, 11         # print a star every 4th char
 	#li   $a0, '*'
 	#syscall
 
@@ -120,11 +134,13 @@ top:
   li  $t0, '#'
   beq $v0, $t0, comment
 
-  syscall
+	syscall		     # $a0 gets printed in syscall with $v0 = 14
+
+	#li $t0, '#'
+	#beq $a0, $t0, printcomment
 
 	bltz $v0, error      # amount of data read is in v0
 	bgtz $v0, top
-	#-------------------------------------------------------------------
 	                     # EOF was reached.
 	                     # print a final line feed
 	                     # useful for debugging so you know where you end
@@ -160,6 +176,8 @@ width:
 
 
 comment:
+ 
+printcomment:
 	li $v0, 4
 	la $a0, foundcomment
 	syscall
@@ -182,6 +200,13 @@ comment2:
 
  # bltz $v0, error
  # bgtz $v0, top       #branch if $v0 is not 0 back to top
+	                     # read 4 more bytes
+	li   $v0, 14         # 14=read from file
+	add  $a0, $s0, $0    # $s0 holds fd
+	syscall		     # $a0 gets printed in syscall with $v0 = 14
+
+	bltz $v0, error      # amount of data read is in v0
+	bgtz $v0, top
 
 goodppm:
 	li $v0, 4
