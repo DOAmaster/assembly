@@ -34,13 +34,15 @@ buffer:   .space  4          # a buffer of size 4 bytes
 
           .word   0          # do this to align things
 errormsg: .asciiz "file open or read error\n"
+filemsg:  .asciiz "File descriptor: "
 foundmsg: .asciiz "Good P3 file found.\n"
 foundcomment: .asciiz "Found a comment: "
-hightmsg: .asciiz "Image height: "
+heightmsg: .asciiz "Image height: "
 widthmsg: .asciiz "Image width: "
 colormsg: .asciiz "Maximum color value: "
 linefeed: .asciiz "\n"
 var1:     .asciiz "P3"
+testcomment: .asciiz "image file for 2240 project testing."
 
 .text
 .globl main
@@ -85,14 +87,19 @@ b1:                      # put in break point for debugging purposes
 	# syscall
 	                     # print the buffer
 	                     # print string syscall will stop at \0
+			     # debugging to test function calls
  	la $t3, var1
-  	jal goodppm 	     #prints if found a good ppm file header
+        jal file	     # prints the file descriptor info
+  	jal goodppm 	     # prints if found a good ppm file header
+	jal comment	     # checks for # then prints until line-feed
+	jal xy		     # prints the width and height line
+	jal maxc	     # prints the line hunder the width and height
 #	beq $v0, $t3, goodppm  
 	# ------------------------------------------------------------------
 top:
   	li $v0, 4            # 4=print string
 	la   $a0, buffer     # buffer is 4 bytes followed by a null byte
-	syscall    
+#	syscall    
 	
 	#li   $v0, 11         # print a star
 	#li   $a0, '*'
@@ -115,8 +122,76 @@ top:
 	li  $v0, 16        # 16=close file
 	add  $a0, $s0, $0  # $s0 holds fd
 	syscall            # close file
-	b exit 
+	b exit
+  
+comment:
+	li $v0, 4
+	la $a0, foundcomment
+	syscall
 
+	li $v0, 4
+	la $a0, testcomment
+	syscall
+
+	li $v0, 4
+	la $a0, linefeed
+	syscall
+
+	j $ra
+maxc:
+	li $v0, 4
+	la $a0, colormsg
+	syscall
+
+	li $v0, 1
+	li $a0, 255
+	syscall
+
+	li $v0, 4
+	la $a0, linefeed
+	syscall
+
+	j $ra
+file:
+	li $v0, 4
+	la $a0, filemsg
+	syscall
+
+	li $v0, 1
+	li $a0, 3
+	syscall
+
+	li $v0, 4
+	la $a0, linefeed
+	syscall
+
+	j $ra
+xy:
+	li $v0, 4
+	la $a0, widthmsg
+	syscall
+
+	li $v0, 1
+	li $a0, 60
+	syscall
+
+	li $v0, 4
+	la $a0, linefeed
+	syscall
+
+	li $v0, 4
+	la $a0, heightmsg
+	syscall
+
+	li $v0, 1
+	li $a0, 30
+	syscall
+
+	li $v0, 4
+	la $a0, linefeed
+	syscall
+
+	j $ra
 goodppm:
 	li $v0, 4
 	la $a0, foundmsg
